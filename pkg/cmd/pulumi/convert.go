@@ -28,7 +28,6 @@ import (
 	yamlgen "github.com/pulumi/pulumi-yaml/pkg/pulumiyaml/codegen"
 	"github.com/pulumi/pulumi/pkg/v3/codegen/convert"
 	"github.com/pulumi/pulumi/pkg/v3/codegen/dotnet"
-	gogen "github.com/pulumi/pulumi/pkg/v3/codegen/go"
 	hclsyntax "github.com/pulumi/pulumi/pkg/v3/codegen/hcl2/syntax"
 	"github.com/pulumi/pulumi/pkg/v3/codegen/nodejs"
 	"github.com/pulumi/pulumi/pkg/v3/codegen/pcl"
@@ -36,6 +35,7 @@ import (
 	"github.com/pulumi/pulumi/pkg/v3/codegen/schema"
 	"github.com/pulumi/pulumi/pkg/v3/engine"
 	"github.com/pulumi/pulumi/sdk/v3/go/common/diag"
+	"github.com/pulumi/pulumi/sdk/v3/go/common/encoding"
 	"github.com/pulumi/pulumi/sdk/v3/go/common/env"
 	"github.com/pulumi/pulumi/sdk/v3/go/common/resource/plugin"
 	"github.com/pulumi/pulumi/sdk/v3/go/common/util/cmdutil"
@@ -63,7 +63,7 @@ func newConvertCmd() *cobra.Command {
 		Run: cmdutil.RunResultFunc(func(cmd *cobra.Command, args []string) result.Result {
 			cwd, err := os.Getwd()
 			if err != nil {
-				return result.FromError(fmt.Errorf("could not resolve current working directory"))
+				return result.FromError(fmt.Errorf("could not resolve current working directory: %w", err))
 			}
 
 			return runConvert(env.Global(), cwd, mappings, from, language, outDir, generateOnly)
@@ -158,17 +158,25 @@ func pclEject(directory string, loader schema.ReferenceLoader) (*workspace.Proje
 	return &workspace.Project{Name: "pcl"}, program, nil
 }
 
-func runConvert(
-	e env.Env,
-	cwd string, mappings []string, from string, language string,
-	outDir string, generateOnly bool) result.Result {
+func runConvert(e env.Env, cwd string, mappings []string,
+	from string, language string, outDir string, generateOnly bool) result.Result {
+
+	host, err := newPluginHost()
+	if err != nil {
+		return result.FromError(fmt.Errorf("could not create plugin host: %w", err))
+	}
+	defer contract.IgnoreClose(host)
+
+	// Translate well known languages to runtimes
+	switch language {
+	case "csharp", "c#":
+		language = "dotnet" //nolint:goconst
+	}
 
 	var projectGenerator projectGeneratorFunc
 	switch language {
-	case "csharp", "c#":
+	case "dotnet":
 		projectGenerator = dotnet.GenerateProject
-	case "go":
-		projectGenerator = gogen.GenerateProject
 	case "typescript":
 		projectGenerator = nodejs.GenerateProject
 	case "python": //nolint:goconst
@@ -184,10 +192,27 @@ func runConvert(
 			projectGenerator = pclGenerateProject
 			break
 		}
-		fallthrough
-
-	default:
 		return result.Errorf("cannot generate programs for %q language", language)
+	default:
+		projectGenerator = func(directory string, project workspace.Project, program *pcl.Program) error {
+			languagePlugin, err := host.LanguageRuntime(cwd, cwd, language, nil)
+			if err != nil {
+				return err
+			}
+
+			projectBytes, err := encoding.JSON.Marshal(project)
+			if err != nil {
+				return err
+			}
+			projectJSON := string(projectBytes)
+
+			err = languagePlugin.GenerateProject(directory, projectJSON, program.Source())
+			if err != nil {
+				return err
+			}
+
+			return nil
+		}
 	}
 
 	if outDir != "." {
@@ -197,11 +222,6 @@ func runConvert(
 		}
 	}
 
-	host, err := newPluginHost()
-	if err != nil {
-		return result.FromError(fmt.Errorf("could not create plugin host: %w", err))
-	}
-	defer contract.IgnoreClose(host)
 	loader := schema.NewPluginLoader(host)
 	mapper, err := convert.NewPluginMapper(host, from, mappings)
 	if err != nil {

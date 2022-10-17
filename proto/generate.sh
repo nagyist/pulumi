@@ -40,7 +40,7 @@ $DOCKER_RUN /bin/bash -c 'set -x && GO_PULUMIRPC=/go && \
       --go_out=$TEMP_DIR --go_opt=paths=source_relative \
       --go-grpc_out=$TEMP_DIR --go-grpc_opt=paths=source_relative \
       $PROTO_FILES && \
-    cp "$TEMP_DIR"/pulumi/*.go "$GO_PULUMIRPC"'
+    cp -r "$TEMP_DIR"/pulumi/* "$GO_PULUMIRPC"'
 
 # Protoc for JavaScript has a bug where it emits Google Closure Compiler directives in the module prologue that mutate
 # the global object, which causes side-by-side bugs in pulumi/pulumi (pulumi/pulumi#2401). The protoc compiler
@@ -66,7 +66,7 @@ $DOCKER_RUN /bin/bash -c 'set -x && JS_PULUMIRPC=/nodejs/proto && \
     sed -i "s|^var grpc = require(.*);|var grpc = require('\''@grpc\/grpc-js'\'');|" "$TEMP_DIR"/**/*.js && \
     sed -i "s|require('\''../pulumi/|require('\''./|" "$TEMP_DIR"/pulumi/*.js && \
     cp "$TEMP_DIR"/google/protobuf/*.js "$JS_PULUMIRPC" && \
-    cp "$TEMP_DIR"/pulumi/*.js "$JS_PULUMIRPC"'
+    cp -r "$TEMP_DIR"/pulumi/* "$JS_PULUMIRPC"'
 
 # Protoc for Python has a bug where, if your proto files are all in the same directory relative
 # to one another, imports of said proto files will produce imports that don't work using Python 3.
@@ -94,10 +94,10 @@ $DOCKER_RUN /bin/bash -c 'PY_PULUMIRPC=/python/lib/pulumi/runtime/proto/ && \
     mkdir -p "$TEMP_DIR" && \
     python3 -m grpc_tools.protoc -I./ --python_out="$TEMP_DIR" --mypy_out="$TEMP_DIR" --grpc_python_out="$TEMP_DIR" --mypy_grpc_out="$TEMP_DIR" $PROTO_FILES && \
     sed -i "s/^from pulumi import \([^ ]*\)_pb2 as \([^ ]*\)$/from . import \1_pb2 as \2/" "$TEMP_DIR"/pulumi/*.py && \
+    sed -i "s/^from pulumi.codegen import \([^ ]*\)_pb2 as \([^ ]*\)$/from .codegen import \1_pb2 as \2/" "$TEMP_DIR"/pulumi/*.py && \
     sed -i "s/^import grpc$/import grpc\nimport grpc.aio\nimport typing/" "$TEMP_DIR"/pulumi/*.pyi && \
     sed -i "s/: grpc\.Server/: typing.Union[grpc.Server, grpc.aio.Server]/" "$TEMP_DIR"/pulumi/*.pyi && \
     sed -i "s/@abc.abstractmethod//" "$TEMP_DIR"/pulumi/*.pyi && \
-    cp "$TEMP_DIR"/pulumi/*.py "$PY_PULUMIRPC" &&
-    cp "$TEMP_DIR"/pulumi/*.pyi "$PY_PULUMIRPC"'
+    cp -r "$TEMP_DIR"/pulumi/* "$PY_PULUMIRPC"'
 
 echo "* Done."

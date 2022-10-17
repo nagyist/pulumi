@@ -15,6 +15,7 @@
 package main
 
 import (
+	"fmt"
 	"os"
 	"path/filepath"
 
@@ -23,11 +24,11 @@ import (
 	javagen "github.com/pulumi/pulumi-java/pkg/codegen/java"
 
 	"github.com/pulumi/pulumi/pkg/v3/codegen/dotnet"
-	gogen "github.com/pulumi/pulumi/pkg/v3/codegen/go"
 	"github.com/pulumi/pulumi/pkg/v3/codegen/nodejs"
 	"github.com/pulumi/pulumi/pkg/v3/codegen/python"
 	"github.com/pulumi/pulumi/pkg/v3/codegen/schema"
 	"github.com/pulumi/pulumi/sdk/v3/go/common/util/cmdutil"
+	"github.com/pulumi/pulumi/sdk/v3/go/common/util/contract"
 )
 
 func newGenSdkCommand() *cobra.Command {
@@ -49,7 +50,9 @@ func newGenSdkCommand() *cobra.Command {
 			}
 			if language == "all" {
 				for _, lang := range []string{"dotnet", "go", "java", "nodejs", "python"} {
-					err := genSDK(lang, out, pkg)
+					// If we're codegen'ing all languages, we'll generate a subdirectory for each one.
+					root := filepath.Join(out, language)
+					err := genSDK(lang, root, pkg)
 					if err != nil {
 						return err
 					}
@@ -67,43 +70,98 @@ func newGenSdkCommand() *cobra.Command {
 }
 
 func genSDK(language, out string, pkg *schema.Package) error {
-	var f func(string, *schema.Package, map[string][]byte) (map[string][]byte, error)
-	switch language {
-	case "csharp", "c#", "dotnet":
-		f = dotnet.GeneratePackage
-		language = "dotnet"
-	case "go":
-		f = func(s string, p *schema.Package, m map[string][]byte) (map[string][]byte, error) {
-			return gogen.GeneratePackage(s, pkg)
-		}
-	case "typescript", "nodejs":
-		f = nodejs.GeneratePackage
-		language = "nodejs"
-	case "python": //nolint:goconst
-		f = python.GeneratePackage
-	case "java":
-		f = javagen.GeneratePackage
+	cwd, err := os.Getwd()
+	if err != nil {
+		return fmt.Errorf("could not resolve current working directory: %w", err)
 	}
 
-	m, err := f("pulumi", pkg, nil)
+	// Translate well known languages to runtimes
+	switch language {
+	case "csharp", "c#":
+		language = "dotnet" //nolint:goconst
+	case "typescript":
+		language = "nodejs" //nolint:goconst
+	}
+
+	var f func(string, *schema.Package, map[string][]byte) error
+
+	writeWrapper := func(
+		f func(string, *schema.Package, map[string][]byte) (map[string][]byte, error),
+	) func(string, *schema.Package, map[string][]byte) error {
+		return func(directory string, p *schema.Package, extraFiles map[string][]byte) error {
+			m, err := f("pulumi", p, extraFiles)
+			if err != nil {
+				return err
+			}
+
+			err = os.RemoveAll(directory)
+			if err != nil && !os.IsNotExist(err) {
+				return err
+			}
+			for k, v := range m {
+				path := filepath.Join(directory, k)
+				err := os.MkdirAll(filepath.Dir(path), 0700)
+				if err != nil {
+					return err
+				}
+				err = os.WriteFile(path, v, 0600)
+				if err != nil {
+					return err
+				}
+			}
+			return nil
+		}
+	}
+
+	switch language {
+	case "dotnet":
+		f = writeWrapper(dotnet.GeneratePackage)
+	case "nodejs":
+		f = writeWrapper(nodejs.GeneratePackage)
+	case "python": //nolint:goconst
+		f = writeWrapper(python.GeneratePackage)
+	case "java":
+		f = writeWrapper(javagen.GeneratePackage)
+	default:
+		f = func(directory string, pkg *schema.Package, extraFiles map[string][]byte) error {
+			// Ensure the target directory is clean, but created.
+			err = os.RemoveAll(directory)
+			if err != nil && !os.IsNotExist(err) {
+				return err
+			}
+			err := os.MkdirAll(directory, 0700)
+			if err != nil {
+				return err
+			}
+
+			jsonBytes, err := pkg.MarshalJSON()
+			if err != nil {
+				return err
+			}
+
+			host, err := newPluginHost()
+			if err != nil {
+				return fmt.Errorf("could not create plugin host: %w", err)
+			}
+			defer contract.IgnoreClose(host)
+
+			languagePlugin, err := host.LanguageRuntime(cwd, cwd, language, nil)
+			if err != nil {
+				return err
+			}
+
+			err = languagePlugin.GeneratePackage(directory, string(jsonBytes), extraFiles)
+			if err != nil {
+				return err
+			}
+
+			return nil
+		}
+	}
+
+	err = f(out, pkg, nil)
 	if err != nil {
 		return err
-	}
-	root := filepath.Join(out, language)
-	err = os.RemoveAll(root)
-	if err != nil && !os.IsNotExist(err) {
-		return err
-	}
-	for k, v := range m {
-		path := filepath.Join(root, k)
-		err := os.MkdirAll(filepath.Dir(path), 0700)
-		if err != nil {
-			return err
-		}
-		err = os.WriteFile(path, v, 0600)
-		if err != nil {
-			return err
-		}
 	}
 	return nil
 }
