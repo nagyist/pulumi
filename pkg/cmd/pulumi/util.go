@@ -129,7 +129,7 @@ func nonInteractiveCurrentBackend(ctx context.Context, project *workspace.Projec
 	}
 
 	if filestate.IsFileStateBackendURL(url) {
-		return filestate.New(cmdutil.Diag(), url)
+		return filestate.New(ctx, cmdutil.Diag(), url)
 	}
 	return httpstate.NewLoginManager().Current(ctx, cmdutil.Diag(), url, workspace.GetCloudInsecure(url))
 }
@@ -145,7 +145,7 @@ func currentBackend(ctx context.Context, project *workspace.Project, opts displa
 	}
 
 	if filestate.IsFileStateBackendURL(url) {
-		return filestate.New(cmdutil.Diag(), url)
+		return filestate.New(ctx, cmdutil.Diag(), url)
 	}
 	return httpstate.NewLoginManager().Login(ctx, cmdutil.Diag(), url, workspace.GetCloudInsecure(url), opts)
 }
