@@ -267,7 +267,7 @@ func (b *binder) declareNodes(file *syntax.File) (hcl.Diagnostics, error) {
 					diagnostics = append(diagnostics, labelsErrorf(item, "components must have exactly one label"))
 					continue
 				}
-				name = item.Labels[0]
+				name := item.Labels[0]
 
 				v := &Component{
 					name:   name,

@@ -16,31 +16,40 @@
 package pcl
 
 import (
-	"github.com/hashicorp/hcl/v2"
-	"github.com/pulumi/pulumi/pkg/v3/codegen/hcl2/model"
+    "github.com/hashicorp/hcl/v2"
+    "github.com/pulumi/pulumi/pkg/v3/codegen/hcl2/model"
 )
 
 func (b *binder) bindComponent(node *Component) hcl.Diagnostics {
-	block, diagnostics := model.BindBlock(node.syntax, model.StaticScope(b.root), b.tokens, b.options.modelOptions()...)
-	node.Definition = block
+    block, diagnostics := model.BindBlock(node.syntax, model.StaticScope(b.root), b.tokens, b.options.modelOptions()...)
+    node.Definition = block
 
-	if sourceAttr, ok := block.Body.Attribute("source"); ok {
-		source, lDiags := getStringAttrValue(sourceAttr)
-		if lDiags != nil {
-			diagnostics = diagnostics.Append(lDiags)
-			return diagnostics
-		} else {
-			node.source = source
-		}
-	}
+    if sourceAttr, ok := block.Body.Attribute("source"); ok {
+        source, lDiags := getStringAttrValue(sourceAttr)
+        if lDiags != nil {
+            diagnostics = diagnostics.Append(lDiags)
+            return diagnostics
+        } else {
+            node.source = source
+        }
+    }
 
-	// check we can use components and load the program
-	if b.options.componentLoader == nil {
-		diagnostics = diagnostics.Append(errorf(node.Syntax.Expr.Range(), "components are not supported"))
-		return diagnostics
-	}
+    // check we can use components and load the program
+    if b.options.componentLoader == nil {
+        diagnostics = diagnostics.Append(errorf(node.SyntaxNode().Range(), "components are not supported"))
+        return diagnostics
+    }
 
-	program = b.options.componentLoader(node.source)
+    boundProgram, diags, err := b.options.componentLoader(node.source)
+    if err != nil {
+        diagnostics = diagnostics.Append(errorf(node.SyntaxNode().Range(), err.Error()))
+        return diagnostics
+    }
 
-	return diagnostics
+    for _, message := range diags {
+        diagnostics = diagnostics.Append(message)
+    }
+
+    node.program = boundProgram
+    return diagnostics
 }

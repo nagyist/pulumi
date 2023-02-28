@@ -65,5 +65,5 @@ func (c *Component) Traverse(traverser hcl.Traverser) (model.Traversable, hcl.Di
 }
 
 func (c *Component) VisitExpressions(pre, post model.ExpressionVisitor) hcl.Diagnostics {
-	return model.VisitExpressions(r.Definition, pre, post)
+	return model.VisitExpressions(c.Definition, pre, post)
 }

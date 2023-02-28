@@ -57,7 +57,7 @@ func (t *ComponentType) Traverse(traverser hcl.Traverser) (Traversable, hcl.Diag
 	if !InputType(NumberType).ConversionFrom(indexType).Exists() {
 		diagnostics = hcl.Diagnostics{unsupportedListIndex(traverser.SourceRange())}
 	}
-	return t.ElementType, diagnostics
+	return nil, diagnostics
 }
 
 // Equals returns true if this type has the same identity as the given type.
@@ -114,33 +114,7 @@ func (t *ComponentType) string(seen map[Type]struct{}) string {
 }
 
 func (t *ComponentType) unify(other Type) (Type, ConversionKind) {
-	return unify(t, other, func() (Type, ConversionKind) {
-		switch other := other.(type) {
-		case *TupleType:
-			// If the other element is a list type, prefer the list type, but unify the element type.
-			elementType, conversionKind := t.ElementType, SafeConversion
-			for _, other := range other.ElementTypes {
-				element, ck := elementType.unify(other)
-				if ck < conversionKind {
-					conversionKind = ck
-				}
-				elementType = element
-			}
-			return NewListType(elementType), conversionKind
-		case *SetType:
-			// If the other element is a set type, prefer the list type, but unify the element types.
-			elementType, conversionKind := t.ElementType.unify(other.ElementType)
-			return NewListType(elementType), conversionKind
-		case *ListType:
-			// If the other type is a list type, unify based on the element type.
-			elementType, conversionKind := t.ElementType.unify(other.ElementType)
-			return NewListType(elementType), conversionKind
-		default:
-			// Prefer the list type.
-			kind, _ := t.conversionFrom(other, true, nil)
-			return t, kind
-		}
-	})
+	return NoneType, NoConversion
 }
 
 func (*ComponentType) isType() {}
