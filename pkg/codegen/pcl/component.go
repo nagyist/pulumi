@@ -61,7 +61,7 @@ func (c *Component) Type() model.Type {
 }
 
 func (c *Component) Traverse(traverser hcl.Traverser) (model.Traversable, hcl.Diagnostics) {
-	panic("TODO")
+	return model.DynamicType.Traverse(traverser)
 }
 
 func (c *Component) VisitExpressions(pre, post model.ExpressionVisitor) hcl.Diagnostics {

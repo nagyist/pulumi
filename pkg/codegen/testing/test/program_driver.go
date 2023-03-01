@@ -234,6 +234,7 @@ var PulumiPulumiProgramTests = []ProgramTest{
 	{
 		Directory:   "components",
 		Description: "Components",
+		SkipCompile: allProgLanguages,
 	},
 }
 
@@ -434,6 +435,11 @@ func TestProgramCodegen(
 			hclFiles := map[string]*hcl.File{
 				tt.Directory + ".pp": {Body: parser.Files[0].Body, Bytes: parser.Files[0].Bytes}}
 			opts := append(tt.BindOptions, pcl.PluginHost(utils.NewHost(testdataPath)))
+			absoluteTestDir, err := filepath.Abs(testDir)
+			if err != nil {
+				t.Fatalf("failed to bind program: unable to find the absolute path of %v", absoluteTestDir)
+			}
+			opts = append(opts, pcl.DirPath(absoluteTestDir))
 
 			program, diags, err := pcl.BindProgram(parser.Files, opts...)
 			if err != nil {

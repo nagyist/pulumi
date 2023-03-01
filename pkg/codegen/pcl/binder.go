@@ -38,7 +38,11 @@ type bindOptions struct {
 	skipResourceTypecheck  bool
 	loader                 schema.Loader
 	packageCache           *PackageCache
-	componentLoader        func(string) (*Program, hcl.Diagnostics, error)
+	// the directory path of the PCL program being bound
+	// we use this to locate the source of the component blocks
+	// which refer to a component resource in a relative directory
+	dirPath         string
+	componentLoader func(string) (*Program, hcl.Diagnostics, error)
 }
 
 func (opts bindOptions) modelOptions() []model.BindOption {
@@ -86,6 +90,12 @@ func Loader(loader schema.Loader) BindOption {
 func Cache(cache *PackageCache) BindOption {
 	return func(options *bindOptions) {
 		options.packageCache = cache
+	}
+}
+
+func DirPath(path string) BindOption {
+	return func(options *bindOptions) {
+		options.dirPath = path
 	}
 }
 
@@ -263,15 +273,17 @@ func (b *binder) declareNodes(file *syntax.File) (hcl.Diagnostics, error) {
 					return nil, err
 				}
 			case "component":
-				if len(item.Labels) != 1 {
-					diagnostics = append(diagnostics, labelsErrorf(item, "components must have exactly one label"))
+				if len(item.Labels) != 2 {
+					diagnostics = append(diagnostics, labelsErrorf(item, "components must have exactly two labels"))
 					continue
 				}
 				name := item.Labels[0]
+				source := item.Labels[1]
 
 				v := &Component{
 					name:   name,
 					syntax: item,
+					source: source,
 				}
 				diags := b.declareNode(name, v)
 				diagnostics = append(diagnostics, diags...)

@@ -16,40 +16,82 @@
 package pcl
 
 import (
-    "github.com/hashicorp/hcl/v2"
-    "github.com/pulumi/pulumi/pkg/v3/codegen/hcl2/model"
+	"github.com/hashicorp/hcl/v2"
+	"github.com/pulumi/pulumi/pkg/v3/codegen/hcl2/model"
+	hclsyntax "github.com/pulumi/pulumi/pkg/v3/codegen/hcl2/syntax"
+	"io/fs"
+	"os"
+	"path/filepath"
 )
 
 func (b *binder) bindComponent(node *Component) hcl.Diagnostics {
-    block, diagnostics := model.BindBlock(node.syntax, model.StaticScope(b.root), b.tokens, b.options.modelOptions()...)
-    node.Definition = block
+	block, diagnostics := model.BindBlock(node.syntax, model.StaticScope(b.root), b.tokens, b.options.modelOptions()...)
+	node.Definition = block
 
-    if sourceAttr, ok := block.Body.Attribute("source"); ok {
-        source, lDiags := getStringAttrValue(sourceAttr)
-        if lDiags != nil {
-            diagnostics = diagnostics.Append(lDiags)
-            return diagnostics
-        } else {
-            node.source = source
-        }
-    }
+	// check we can use components and load the program
+	if b.options.dirPath == "" {
+		diagnostics = diagnostics.Append(errorf(node.SyntaxNode().Range(),
+			"components require the binder to have set a directory path"))
+		return diagnostics
+	}
 
-    // check we can use components and load the program
-    if b.options.componentLoader == nil {
-        diagnostics = diagnostics.Append(errorf(node.SyntaxNode().Range(), "components are not supported"))
-        return diagnostics
-    }
+	// bind the component here as if it was a new program
+	componentSourceDir := filepath.Join(b.options.dirPath, node.source)
 
-    boundProgram, diags, err := b.options.componentLoader(node.source)
-    if err != nil {
-        diagnostics = diagnostics.Append(errorf(node.SyntaxNode().Range(), err.Error()))
-        return diagnostics
-    }
+	parser := hclsyntax.NewParser()
+	// Load all .pp files in the components' subdirectory
+	err := filepath.WalkDir(componentSourceDir, func(path string, d fs.DirEntry, err error) error {
+		if d.IsDir() {
+			return nil
+		}
 
-    for _, message := range diags {
-        diagnostics = diagnostics.Append(message)
-    }
+		if filepath.Ext(path) == ".pp" {
+			file, err := os.Open(path)
+			if err != nil {
+				return err
+			}
 
-    node.program = boundProgram
-    return diagnostics
+			err = parser.ParseFile(file, filepath.Base(path))
+			if err != nil {
+				return err
+			}
+			diags := parser.Diagnostics
+			if diags.HasErrors() {
+				return diags
+			}
+		}
+		return nil
+	})
+
+	if err != nil {
+		diagnostics = diagnostics.Append(errorf(node.SyntaxNode().Range(), err.Error()))
+		return diagnostics
+	}
+
+	allowMissingProperties := func(options *bindOptions) {
+		options.allowMissingProperties = b.options.allowMissingProperties
+	}
+
+	allowMissingVariables := func(options *bindOptions) {
+		options.allowMissingVariables = b.options.allowMissingVariables
+	}
+
+	componentProgram, programDiags, err := BindProgram(parser.Files,
+		Loader(b.options.loader),
+		DirPath(b.options.dirPath),
+		allowMissingProperties,
+		allowMissingVariables)
+
+	if err != nil {
+		diagnostics = diagnostics.Append(errorf(node.SyntaxNode().Range(), err.Error()))
+		return diagnostics
+	}
+
+	if programDiags.HasErrors() || componentProgram == nil {
+		diagnostics = diagnostics.Append(errorf(node.SyntaxNode().Range(), programDiags.Error()))
+		return diagnostics
+	}
+
+	node.program = componentProgram
+	return diagnostics
 }

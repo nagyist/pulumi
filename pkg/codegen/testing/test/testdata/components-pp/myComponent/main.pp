@@ -1,10 +1,12 @@
 config input string {
 }
 
-resource random_pet "random:index/randomPet:RandomPet" {
-  prefix = input
+resource password "random:index/randomPassword:RandomPassword" {
+  length = 16
+  special = true
+  overrideSpecial = input
 }
 
 output result {
-    value = random_pet.result
+    value = password.result
 }
