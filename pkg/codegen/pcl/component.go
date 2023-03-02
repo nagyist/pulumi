@@ -37,6 +37,9 @@ type Component struct {
 	// The location of the source for the component.
 	source string
 
+	// the full (absolute) path of the component directory
+	fullPath string
+
 	// The inner Program that makes up this Component.
 	program *Program
 

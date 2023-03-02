@@ -122,7 +122,7 @@ func (b *binder) bindComponent(node *Component) hcl.Diagnostics {
 
 	componentProgram, programDiags, err := BindProgram(parser.Files,
 		Loader(b.options.loader),
-		DirPath(b.options.dirPath),
+		DirPath(componentSourceDir),
 		allowMissingProperties,
 		allowMissingVariables)
 
@@ -138,6 +138,7 @@ func (b *binder) bindComponent(node *Component) hcl.Diagnostics {
 
 	node.program = componentProgram
 	node.VariableType = componentVariableType(componentProgram)
+	node.fullPath = componentSourceDir
 
 	componentInputs := componentInputs(componentProgram)
 	providedInputs := []string{}

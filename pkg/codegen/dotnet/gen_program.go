@@ -72,6 +72,12 @@ type generator struct {
 	insideAwait          bool
 	// Program generation options
 	generateOptions GenerateProgramOptions
+	seenComponents  map[string]bool
+}
+
+func (g *generator) hasSeenComponent(componentPath string) bool {
+	_, seen := g.seenComponents[componentPath]
+	return seen
 }
 
 const pulumiPackage = "pulumi"
@@ -145,6 +151,7 @@ func GenerateProgramWithOptions(
 	files := map[string][]byte{
 		"Program.cs": index.Bytes(),
 	}
+
 	return files, g.diagnostics, nil
 }
 
@@ -294,10 +301,13 @@ func (g *generator) genComment(w io.Writer, comment syntax.Comment) {
 	}
 }
 
-// genPreamble generates using statements, class definition and constructor.
-func (g *generator) genPreamble(w io.Writer, program *pcl.Program) {
-	// Accumulate other using statements for the various providers and packages. Don't emit them yet, as we need
-	// to sort them later on.
+type programUsings struct {
+	systemUsings        codegen.StringSet
+	pulumiUsings        codegen.StringSet
+	pulumiHelperMethods codegen.StringSet
+}
+
+func (g *generator) usingStatements(program *pcl.Program) programUsings {
 	systemUsings := codegen.NewStringSet("System.Collections.Generic")
 	pulumiUsings := codegen.NewStringSet()
 	preambleHelperMethods := codegen.NewStringSet()
@@ -340,6 +350,22 @@ func (g *generator) genPreamble(w io.Writer, program *pcl.Program) {
 		})
 		contract.Assert(len(diags) == 0)
 	}
+
+	return programUsings{
+		systemUsings:        systemUsings,
+		pulumiUsings:        pulumiUsings,
+		pulumiHelperMethods: preambleHelperMethods,
+	}
+}
+
+// genPreamble generates using statements, class definition and constructor.
+func (g *generator) genPreamble(w io.Writer, program *pcl.Program) {
+	// Accumulate other using statements for the various providers and packages. Don't emit them yet, as we need
+	// to sort them later on.
+	programUsings := g.usingStatements(program)
+	systemUsings := programUsings.systemUsings
+	pulumiUsings := programUsings.pulumiUsings
+	preambleHelperMethods := programUsings.pulumiHelperMethods
 
 	if g.asyncInit {
 		systemUsings.Add("System.Threading.Tasks")
