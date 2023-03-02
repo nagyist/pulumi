@@ -140,7 +140,7 @@ func setupGitRepo(ctx context.Context, workDir string, repoArgs *GitRepo) (strin
 			Auth:       cloneOptions.Auth,
 			RefSpecs:   []config.RefSpec{config.RefSpec(repoArgs.CommitHash + ":" + repoArgs.CommitHash)},
 		})
-		if err != nil && !errors.Is(err, git.NoErrAlreadyUpToDate) {
+		if err != nil && !errors.Is(err, git.NoErrAlreadyUpToDate) && !errors.Is(err, git.ErrExactSHA1NotSupported) {
 			return "", fmt.Errorf("fetching commit: %w", err)
 		}
 
