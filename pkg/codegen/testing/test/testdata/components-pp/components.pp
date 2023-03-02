@@ -1,7 +1,7 @@
-component "aComponent" "./myComponent" {
+component exampleComponent "./exampleComponent" {
     input = "doggo"
 }
 
 output result {
-    value = aComponent.result
+    value = exampleComponent.result
 }

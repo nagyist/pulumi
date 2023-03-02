@@ -24,6 +24,50 @@ import (
 	"path/filepath"
 )
 
+// componentVariableType returns the type of the variable of which the value is a component.
+// The type is derived from the outputs of the sub-program of the component into an ObjectType
+func componentVariableType(program *Program) model.Type {
+	properties := map[string]model.Type{}
+	for _, node := range program.Nodes {
+		switch node := node.(type) {
+		case *OutputVariable:
+			properties[node.LogicalName()] = node.Type()
+		}
+	}
+
+	return &model.ObjectType{Properties: properties}
+}
+
+type componentInput struct {
+	key      string
+	required bool
+}
+
+func componentInputs(program *Program) map[string]componentInput {
+	inputs := map[string]componentInput{}
+	for _, node := range program.Nodes {
+		switch node := node.(type) {
+		case *ConfigVariable:
+			inputs[node.LogicalName()] = componentInput{
+				required: node.DefaultValue == nil,
+				key:      node.LogicalName(),
+			}
+		}
+	}
+
+	return inputs
+}
+
+func contains(slice []string, item string) bool {
+	set := make(map[string]struct{}, len(slice))
+	for _, s := range slice {
+		set[s] = struct{}{}
+	}
+
+	_, ok := set[item]
+	return ok
+}
+
 func (b *binder) bindComponent(node *Component) hcl.Diagnostics {
 	block, diagnostics := model.BindBlock(node.syntax, model.StaticScope(b.root), b.tokens, b.options.modelOptions()...)
 	node.Definition = block
@@ -93,5 +137,61 @@ func (b *binder) bindComponent(node *Component) hcl.Diagnostics {
 	}
 
 	node.program = componentProgram
+	node.VariableType = componentVariableType(componentProgram)
+
+	componentInputs := componentInputs(componentProgram)
+	providedInputs := []string{}
+
+	var options *model.Block
+	for _, item := range block.Body.Items {
+		switch item := item.(type) {
+		case *model.Attribute:
+			// logical name is a special attribute
+			if item.Name == LogicalNamePropertyKey {
+				logicalName, lDiags := getStringAttrValue(item)
+				if lDiags != nil {
+					diagnostics = diagnostics.Append(lDiags)
+				} else {
+					node.logicalName = logicalName
+				}
+				continue
+			}
+			// all other attributes are part of the inputs
+			_, knownInput := componentInputs[item.Name]
+
+			if !knownInput {
+				diagnostics = append(diagnostics, unsupportedAttribute(item.Name, item.Syntax.NameRange))
+				return diagnostics
+			}
+
+			node.Inputs = append(node.Inputs, item)
+			providedInputs = append(providedInputs, item.Name)
+		case *model.Block:
+			switch item.Type {
+			case "options":
+				if options != nil {
+					diagnostics = append(diagnostics, duplicateBlock(item.Type, item.Syntax.TypeRange))
+				} else {
+					options = item
+				}
+			default:
+				diagnostics = append(diagnostics, unsupportedBlock(item.Type, item.Syntax.TypeRange))
+			}
+		}
+	}
+
+	// check that all required inputs are actually set
+	for inputKey, componentInput := range componentInputs {
+		if componentInput.required && !contains(providedInputs, inputKey) {
+			diagnostics = append(diagnostics, missingRequiredAttribute(inputKey, node.SyntaxNode().Range()))
+		}
+	}
+
+	if options != nil {
+		resourceOptions, optionsDiags := bindResourceOptions(options)
+		diagnostics = append(diagnostics, optionsDiags...)
+		node.Options = resourceOptions
+	}
+
 	return diagnostics
 }
