@@ -1,7 +1,7 @@
 // GENERATED CODE -- DO NOT EDIT!
 
 // Original file comments:
-// Copyright 2016-2018, Pulumi Corporation.
+// Copyright 2016-2023, Pulumi Corporation.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -18,8 +18,10 @@
 'use strict';
 var grpc = require('@grpc/grpc-js');
 var pulumi_language_pb = require('./language_pb.js');
+var pulumi_codegen_hcl_pb = require('./codegen/hcl_pb.js');
 var pulumi_plugin_pb = require('./plugin_pb.js');
 var google_protobuf_empty_pb = require('google-protobuf/google/protobuf/empty_pb.js');
+var google_protobuf_struct_pb = require('google-protobuf/google/protobuf/struct_pb.js');
 
 function serialize_google_protobuf_Empty(arg) {
   if (!(arg instanceof google_protobuf_empty_pb.Empty)) {
@@ -32,6 +34,17 @@ function deserialize_google_protobuf_Empty(buffer_arg) {
   return google_protobuf_empty_pb.Empty.deserializeBinary(new Uint8Array(buffer_arg));
 }
 
+function serialize_pulumirpc_AboutRequest(arg) {
+  if (!(arg instanceof pulumi_language_pb.AboutRequest)) {
+    throw new Error('Expected argument of type pulumirpc.AboutRequest');
+  }
+  return Buffer.from(arg.serializeBinary());
+}
+
+function deserialize_pulumirpc_AboutRequest(buffer_arg) {
+  return pulumi_language_pb.AboutRequest.deserializeBinary(new Uint8Array(buffer_arg));
+}
+
 function serialize_pulumirpc_AboutResponse(arg) {
   if (!(arg instanceof pulumi_language_pb.AboutResponse)) {
     throw new Error('Expected argument of type pulumirpc.AboutResponse');
@@ -41,6 +54,72 @@ function serialize_pulumirpc_AboutResponse(arg) {
 
 function deserialize_pulumirpc_AboutResponse(buffer_arg) {
   return pulumi_language_pb.AboutResponse.deserializeBinary(new Uint8Array(buffer_arg));
+}
+
+function serialize_pulumirpc_GeneratePackageRequest(arg) {
+  if (!(arg instanceof pulumi_language_pb.GeneratePackageRequest)) {
+    throw new Error('Expected argument of type pulumirpc.GeneratePackageRequest');
+  }
+  return Buffer.from(arg.serializeBinary());
+}
+
+function deserialize_pulumirpc_GeneratePackageRequest(buffer_arg) {
+  return pulumi_language_pb.GeneratePackageRequest.deserializeBinary(new Uint8Array(buffer_arg));
+}
+
+function serialize_pulumirpc_GeneratePackageResponse(arg) {
+  if (!(arg instanceof pulumi_language_pb.GeneratePackageResponse)) {
+    throw new Error('Expected argument of type pulumirpc.GeneratePackageResponse');
+  }
+  return Buffer.from(arg.serializeBinary());
+}
+
+function deserialize_pulumirpc_GeneratePackageResponse(buffer_arg) {
+  return pulumi_language_pb.GeneratePackageResponse.deserializeBinary(new Uint8Array(buffer_arg));
+}
+
+function serialize_pulumirpc_GenerateProgramRequest(arg) {
+  if (!(arg instanceof pulumi_language_pb.GenerateProgramRequest)) {
+    throw new Error('Expected argument of type pulumirpc.GenerateProgramRequest');
+  }
+  return Buffer.from(arg.serializeBinary());
+}
+
+function deserialize_pulumirpc_GenerateProgramRequest(buffer_arg) {
+  return pulumi_language_pb.GenerateProgramRequest.deserializeBinary(new Uint8Array(buffer_arg));
+}
+
+function serialize_pulumirpc_GenerateProgramResponse(arg) {
+  if (!(arg instanceof pulumi_language_pb.GenerateProgramResponse)) {
+    throw new Error('Expected argument of type pulumirpc.GenerateProgramResponse');
+  }
+  return Buffer.from(arg.serializeBinary());
+}
+
+function deserialize_pulumirpc_GenerateProgramResponse(buffer_arg) {
+  return pulumi_language_pb.GenerateProgramResponse.deserializeBinary(new Uint8Array(buffer_arg));
+}
+
+function serialize_pulumirpc_GenerateProjectRequest(arg) {
+  if (!(arg instanceof pulumi_language_pb.GenerateProjectRequest)) {
+    throw new Error('Expected argument of type pulumirpc.GenerateProjectRequest');
+  }
+  return Buffer.from(arg.serializeBinary());
+}
+
+function deserialize_pulumirpc_GenerateProjectRequest(buffer_arg) {
+  return pulumi_language_pb.GenerateProjectRequest.deserializeBinary(new Uint8Array(buffer_arg));
+}
+
+function serialize_pulumirpc_GenerateProjectResponse(arg) {
+  if (!(arg instanceof pulumi_language_pb.GenerateProjectResponse)) {
+    throw new Error('Expected argument of type pulumirpc.GenerateProjectResponse');
+  }
+  return Buffer.from(arg.serializeBinary());
+}
+
+function deserialize_pulumirpc_GenerateProjectResponse(buffer_arg) {
+  return pulumi_language_pb.GenerateProjectResponse.deserializeBinary(new Uint8Array(buffer_arg));
 }
 
 function serialize_pulumirpc_GetProgramDependenciesRequest(arg) {
@@ -63,6 +142,28 @@ function serialize_pulumirpc_GetProgramDependenciesResponse(arg) {
 
 function deserialize_pulumirpc_GetProgramDependenciesResponse(buffer_arg) {
   return pulumi_language_pb.GetProgramDependenciesResponse.deserializeBinary(new Uint8Array(buffer_arg));
+}
+
+function serialize_pulumirpc_GetRequiredPackagesRequest(arg) {
+  if (!(arg instanceof pulumi_language_pb.GetRequiredPackagesRequest)) {
+    throw new Error('Expected argument of type pulumirpc.GetRequiredPackagesRequest');
+  }
+  return Buffer.from(arg.serializeBinary());
+}
+
+function deserialize_pulumirpc_GetRequiredPackagesRequest(buffer_arg) {
+  return pulumi_language_pb.GetRequiredPackagesRequest.deserializeBinary(new Uint8Array(buffer_arg));
+}
+
+function serialize_pulumirpc_GetRequiredPackagesResponse(arg) {
+  if (!(arg instanceof pulumi_language_pb.GetRequiredPackagesResponse)) {
+    throw new Error('Expected argument of type pulumirpc.GetRequiredPackagesResponse');
+  }
+  return Buffer.from(arg.serializeBinary());
+}
+
+function deserialize_pulumirpc_GetRequiredPackagesResponse(buffer_arg) {
+  return pulumi_language_pb.GetRequiredPackagesResponse.deserializeBinary(new Uint8Array(buffer_arg));
 }
 
 function serialize_pulumirpc_GetRequiredPluginsRequest(arg) {
@@ -107,6 +208,50 @@ function serialize_pulumirpc_InstallDependenciesResponse(arg) {
 
 function deserialize_pulumirpc_InstallDependenciesResponse(buffer_arg) {
   return pulumi_language_pb.InstallDependenciesResponse.deserializeBinary(new Uint8Array(buffer_arg));
+}
+
+function serialize_pulumirpc_LanguageHandshakeRequest(arg) {
+  if (!(arg instanceof pulumi_language_pb.LanguageHandshakeRequest)) {
+    throw new Error('Expected argument of type pulumirpc.LanguageHandshakeRequest');
+  }
+  return Buffer.from(arg.serializeBinary());
+}
+
+function deserialize_pulumirpc_LanguageHandshakeRequest(buffer_arg) {
+  return pulumi_language_pb.LanguageHandshakeRequest.deserializeBinary(new Uint8Array(buffer_arg));
+}
+
+function serialize_pulumirpc_LanguageHandshakeResponse(arg) {
+  if (!(arg instanceof pulumi_language_pb.LanguageHandshakeResponse)) {
+    throw new Error('Expected argument of type pulumirpc.LanguageHandshakeResponse');
+  }
+  return Buffer.from(arg.serializeBinary());
+}
+
+function deserialize_pulumirpc_LanguageHandshakeResponse(buffer_arg) {
+  return pulumi_language_pb.LanguageHandshakeResponse.deserializeBinary(new Uint8Array(buffer_arg));
+}
+
+function serialize_pulumirpc_PackRequest(arg) {
+  if (!(arg instanceof pulumi_language_pb.PackRequest)) {
+    throw new Error('Expected argument of type pulumirpc.PackRequest');
+  }
+  return Buffer.from(arg.serializeBinary());
+}
+
+function deserialize_pulumirpc_PackRequest(buffer_arg) {
+  return pulumi_language_pb.PackRequest.deserializeBinary(new Uint8Array(buffer_arg));
+}
+
+function serialize_pulumirpc_PackResponse(arg) {
+  if (!(arg instanceof pulumi_language_pb.PackResponse)) {
+    throw new Error('Expected argument of type pulumirpc.PackResponse');
+  }
+  return Buffer.from(arg.serializeBinary());
+}
+
+function deserialize_pulumirpc_PackResponse(buffer_arg) {
+  return pulumi_language_pb.PackResponse.deserializeBinary(new Uint8Array(buffer_arg));
 }
 
 function serialize_pulumirpc_PluginInfo(arg) {
@@ -164,10 +309,46 @@ function deserialize_pulumirpc_RunResponse(buffer_arg) {
   return pulumi_language_pb.RunResponse.deserializeBinary(new Uint8Array(buffer_arg));
 }
 
+function serialize_pulumirpc_RuntimeOptionsRequest(arg) {
+  if (!(arg instanceof pulumi_language_pb.RuntimeOptionsRequest)) {
+    throw new Error('Expected argument of type pulumirpc.RuntimeOptionsRequest');
+  }
+  return Buffer.from(arg.serializeBinary());
+}
+
+function deserialize_pulumirpc_RuntimeOptionsRequest(buffer_arg) {
+  return pulumi_language_pb.RuntimeOptionsRequest.deserializeBinary(new Uint8Array(buffer_arg));
+}
+
+function serialize_pulumirpc_RuntimeOptionsResponse(arg) {
+  if (!(arg instanceof pulumi_language_pb.RuntimeOptionsResponse)) {
+    throw new Error('Expected argument of type pulumirpc.RuntimeOptionsResponse');
+  }
+  return Buffer.from(arg.serializeBinary());
+}
+
+function deserialize_pulumirpc_RuntimeOptionsResponse(buffer_arg) {
+  return pulumi_language_pb.RuntimeOptionsResponse.deserializeBinary(new Uint8Array(buffer_arg));
+}
+
 
 // LanguageRuntime is the interface that the planning monitor uses to drive execution of an interpreter responsible
 // for confguring and creating resource objects.
 var LanguageRuntimeService = exports.LanguageRuntimeService = {
+  // `Handshake` is the first call made by the engine to a language host. It is used to pass the 
+// engine's address to the language host so that it may establish its own connections back,
+// and to establish protocol configuration that will be used to communicate between the two parties. 
+handshake: {
+    path: '/pulumirpc.LanguageRuntime/Handshake',
+    requestStream: false,
+    responseStream: false,
+    requestType: pulumi_language_pb.LanguageHandshakeRequest,
+    responseType: pulumi_language_pb.LanguageHandshakeResponse,
+    requestSerialize: serialize_pulumirpc_LanguageHandshakeRequest,
+    requestDeserialize: deserialize_pulumirpc_LanguageHandshakeRequest,
+    responseSerialize: serialize_pulumirpc_LanguageHandshakeResponse,
+    responseDeserialize: deserialize_pulumirpc_LanguageHandshakeResponse,
+  },
   // GetRequiredPlugins computes the complete set of anticipated plugins required by a program.
 getRequiredPlugins: {
     path: '/pulumirpc.LanguageRuntime/GetRequiredPlugins',
@@ -179,6 +360,18 @@ getRequiredPlugins: {
     requestDeserialize: deserialize_pulumirpc_GetRequiredPluginsRequest,
     responseSerialize: serialize_pulumirpc_GetRequiredPluginsResponse,
     responseDeserialize: deserialize_pulumirpc_GetRequiredPluginsResponse,
+  },
+  // GetRequiredPackages computes the complete set of anticipated packages required by a program.
+getRequiredPackages: {
+    path: '/pulumirpc.LanguageRuntime/GetRequiredPackages',
+    requestStream: false,
+    responseStream: false,
+    requestType: pulumi_language_pb.GetRequiredPackagesRequest,
+    responseType: pulumi_language_pb.GetRequiredPackagesResponse,
+    requestSerialize: serialize_pulumirpc_GetRequiredPackagesRequest,
+    requestDeserialize: deserialize_pulumirpc_GetRequiredPackagesRequest,
+    responseSerialize: serialize_pulumirpc_GetRequiredPackagesResponse,
+    responseDeserialize: deserialize_pulumirpc_GetRequiredPackagesResponse,
   },
   // Run executes a program and returns its result.
 run: {
@@ -216,15 +409,27 @@ installDependencies: {
     responseSerialize: serialize_pulumirpc_InstallDependenciesResponse,
     responseDeserialize: deserialize_pulumirpc_InstallDependenciesResponse,
   },
+  // RuntimeOptionsPrompts returns a list of additional prompts to ask during `pulumi new`.
+runtimeOptionsPrompts: {
+    path: '/pulumirpc.LanguageRuntime/RuntimeOptionsPrompts',
+    requestStream: false,
+    responseStream: false,
+    requestType: pulumi_language_pb.RuntimeOptionsRequest,
+    responseType: pulumi_language_pb.RuntimeOptionsResponse,
+    requestSerialize: serialize_pulumirpc_RuntimeOptionsRequest,
+    requestDeserialize: deserialize_pulumirpc_RuntimeOptionsRequest,
+    responseSerialize: serialize_pulumirpc_RuntimeOptionsResponse,
+    responseDeserialize: deserialize_pulumirpc_RuntimeOptionsResponse,
+  },
   // About returns information about the runtime for this language.
 about: {
     path: '/pulumirpc.LanguageRuntime/About',
     requestStream: false,
     responseStream: false,
-    requestType: google_protobuf_empty_pb.Empty,
+    requestType: pulumi_language_pb.AboutRequest,
     responseType: pulumi_language_pb.AboutResponse,
-    requestSerialize: serialize_google_protobuf_Empty,
-    requestDeserialize: deserialize_google_protobuf_Empty,
+    requestSerialize: serialize_pulumirpc_AboutRequest,
+    requestDeserialize: deserialize_pulumirpc_AboutRequest,
     responseSerialize: serialize_pulumirpc_AboutResponse,
     responseDeserialize: deserialize_pulumirpc_AboutResponse,
   },
@@ -251,6 +456,54 @@ runPlugin: {
     requestDeserialize: deserialize_pulumirpc_RunPluginRequest,
     responseSerialize: serialize_pulumirpc_RunPluginResponse,
     responseDeserialize: deserialize_pulumirpc_RunPluginResponse,
+  },
+  // GenerateProgram generates a given PCL program into a program for this language.
+generateProgram: {
+    path: '/pulumirpc.LanguageRuntime/GenerateProgram',
+    requestStream: false,
+    responseStream: false,
+    requestType: pulumi_language_pb.GenerateProgramRequest,
+    responseType: pulumi_language_pb.GenerateProgramResponse,
+    requestSerialize: serialize_pulumirpc_GenerateProgramRequest,
+    requestDeserialize: deserialize_pulumirpc_GenerateProgramRequest,
+    responseSerialize: serialize_pulumirpc_GenerateProgramResponse,
+    responseDeserialize: deserialize_pulumirpc_GenerateProgramResponse,
+  },
+  // GenerateProject generates a given PCL program into a project for this language.
+generateProject: {
+    path: '/pulumirpc.LanguageRuntime/GenerateProject',
+    requestStream: false,
+    responseStream: false,
+    requestType: pulumi_language_pb.GenerateProjectRequest,
+    responseType: pulumi_language_pb.GenerateProjectResponse,
+    requestSerialize: serialize_pulumirpc_GenerateProjectRequest,
+    requestDeserialize: deserialize_pulumirpc_GenerateProjectRequest,
+    responseSerialize: serialize_pulumirpc_GenerateProjectResponse,
+    responseDeserialize: deserialize_pulumirpc_GenerateProjectResponse,
+  },
+  // GeneratePackage generates a given pulumi package into a package for this language.
+generatePackage: {
+    path: '/pulumirpc.LanguageRuntime/GeneratePackage',
+    requestStream: false,
+    responseStream: false,
+    requestType: pulumi_language_pb.GeneratePackageRequest,
+    responseType: pulumi_language_pb.GeneratePackageResponse,
+    requestSerialize: serialize_pulumirpc_GeneratePackageRequest,
+    requestDeserialize: deserialize_pulumirpc_GeneratePackageRequest,
+    responseSerialize: serialize_pulumirpc_GeneratePackageResponse,
+    responseDeserialize: deserialize_pulumirpc_GeneratePackageResponse,
+  },
+  // Pack packs a package into a language specific artifact.
+pack: {
+    path: '/pulumirpc.LanguageRuntime/Pack',
+    requestStream: false,
+    responseStream: false,
+    requestType: pulumi_language_pb.PackRequest,
+    responseType: pulumi_language_pb.PackResponse,
+    requestSerialize: serialize_pulumirpc_PackRequest,
+    requestDeserialize: deserialize_pulumirpc_PackRequest,
+    responseSerialize: serialize_pulumirpc_PackResponse,
+    responseDeserialize: deserialize_pulumirpc_PackResponse,
   },
 };
 

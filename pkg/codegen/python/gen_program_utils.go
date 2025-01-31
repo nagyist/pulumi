@@ -1,3 +1,17 @@
+// Copyright 2022-2024, Pulumi Corporation.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
 package python
 
 import "fmt"
@@ -17,6 +31,13 @@ func getHelperMethodIfNeeded(functionName string, indent string) (string, bool) 
 		return fmt.Sprintf(`
 %sdef not_implemented(msg):
 %s    raise NotImplementedError(msg)`, indent, indent), true
+	case "singleOrNone":
+		return fmt.Sprintf(
+			`%sdef single_or_none(elements):
+%s    if len(elements) != 1:
+%s        raise Exception("single_or_none expected input list to have a single element")
+%s    return elements[0]
+`, indent, indent, indent, indent), true
 	default:
 		return "", false
 	}

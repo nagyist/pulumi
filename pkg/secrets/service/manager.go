@@ -1,4 +1,4 @@
-// Copyright 2016-2022, Pulumi Corporation.
+// Copyright 2016-2023, Pulumi Corporation.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -27,6 +27,8 @@ import (
 	"github.com/pulumi/pulumi/sdk/v3/go/common/diag"
 	"github.com/pulumi/pulumi/sdk/v3/go/common/diag/colors"
 	"github.com/pulumi/pulumi/sdk/v3/go/common/resource/config"
+	"github.com/pulumi/pulumi/sdk/v3/go/common/slice"
+	"github.com/pulumi/pulumi/sdk/v3/go/common/tokens"
 	"github.com/pulumi/pulumi/sdk/v3/go/common/util/contract"
 	"github.com/pulumi/pulumi/sdk/v3/go/common/workspace"
 )
@@ -65,7 +67,7 @@ func (c *serviceCrypter) DecryptValue(ctx context.Context, cipherstring string) 
 }
 
 func (c *serviceCrypter) BulkDecrypt(ctx context.Context, secrets []string) (map[string]string, error) {
-	secretsToDecrypt := make([][]byte, 0, len(secrets))
+	secretsToDecrypt := slice.Prealloc[[]byte](len(secrets))
 	for _, val := range secrets {
 		ciphertext, err := base64.StdEncoding.DecodeString(val)
 		if err != nil {
@@ -98,7 +100,7 @@ type serviceSecretsManagerState struct {
 var _ secrets.Manager = &serviceSecretsManager{}
 
 type serviceSecretsManager struct {
-	state   serviceSecretsManagerState
+	state   json.RawMessage
 	crypter config.Crypter
 }
 
@@ -106,7 +108,7 @@ func (sm *serviceSecretsManager) Type() string {
 	return Type
 }
 
-func (sm *serviceSecretsManager) State() interface{} {
+func (sm *serviceSecretsManager) State() json.RawMessage {
 	return sm.state
 }
 
@@ -139,14 +141,19 @@ func NewServiceSecretsManager(
 	info.SecretsProvider = ""
 	info.EncryptedKey = ""
 
+	state, err := json.Marshal(serviceSecretsManagerState{
+		URL:      client.URL(),
+		Owner:    id.Owner,
+		Project:  id.Project,
+		Stack:    id.Stack.String(),
+		Insecure: client.Insecure(),
+	})
+	if err != nil {
+		return nil, fmt.Errorf("marshalling state: %w", err)
+	}
+
 	return &serviceSecretsManager{
-		state: serviceSecretsManagerState{
-			URL:      client.URL(),
-			Owner:    id.Owner,
-			Project:  id.Project,
-			Stack:    id.Stack,
-			Insecure: client.Insecure(),
-		},
+		state:   state,
 		crypter: newServiceCrypter(client, id),
 	}, nil
 }
@@ -169,17 +176,22 @@ func NewServiceSecretsManagerFromState(state json.RawMessage) (secrets.Manager, 
 		return nil, fmt.Errorf("could not find access token for %s, have you logged in?", s.URL)
 	}
 
+	stack, err := tokens.ParseStackName(s.Stack)
+	if err != nil {
+		return nil, fmt.Errorf("parsing stack name: %w", err)
+	}
+
 	id := client.StackIdentifier{
 		Owner:   s.Owner,
 		Project: s.Project,
-		Stack:   s.Stack,
+		Stack:   stack,
 	}
 	c := client.NewClient(s.URL, token, s.Insecure, diag.DefaultSink(io.Discard, io.Discard, diag.FormatOptions{
 		Color: colors.Never,
 	}))
 
 	return &serviceSecretsManager{
-		state:   s,
+		state:   state,
 		crypter: newServiceCrypter(c, id),
 	}, nil
 }
